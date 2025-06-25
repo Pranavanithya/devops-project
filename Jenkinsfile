@@ -1,24 +1,42 @@
 pipeline {
     agent any
 
-   stage('Clone Repository') {
-    steps {
-        git branch: 'main', url: 'https://github.com/Pranavanithya/devops-project.git'
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')  // Jenkins credentials ID
+        IMAGE_NAME = 'pranavanithya123/flask-app'
     }
-}
 
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Pranavanithya/devops-project.git'
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("flask-app:latest")
+                    dockerImage = docker.build("${IMAGE_NAME}:latest")
                 }
             }
         }
 
-        stage('Run Container') {
+        stage('Push Docker Image') {
             steps {
-                sh 'docker run -d -p 5000:5000 --name flask-container flask-app:latest'
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
+                        dockerImage.push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            steps {
+                sh '''
+                  cd ansible
+                  ansible-playbook -i hosts playbook.yml
+                '''
             }
         }
     }
