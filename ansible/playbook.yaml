@@ -1,0 +1,22 @@
+---
+- name: Deploy Flask App with Docker
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull Docker image
+      shell: docker pull flask-app:latest
+
+    - name: Run Docker container
+      shell: docker run -d -p 5000:5000 --name flask-container flask-app:latest
