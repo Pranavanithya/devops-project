@@ -37,8 +37,11 @@ pipeline {
 
         stage('Deploy with Ansible') {
             steps {
-                echo '🚀 Triggering Ansible deployment (add your logic here)...'
-                // Add your Ansible command or SSH deployment here
+                script {
+                    sh '''
+                        ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
+                    '''
+                }
             }
         }
     }
