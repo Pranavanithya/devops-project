@@ -2,12 +2,11 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')  // Jenkins credentials ID
-        IMAGE_NAME = 'pranavanithya123/flask-app'
+        IMAGE_NAME = 'pranavanithya123/flask-app:latest'
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Pranavanithya/devops-project.git'
             }
@@ -16,16 +15,21 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("${IMAGE_NAME}:latest")
+                    dockerImage = docker.build("${IMAGE_NAME}")
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
-                        dockerImage.push('latest')
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKERHUB_CREDENTIALS',
+                    usernameVariable: 'DOCKERHUB_USERNAME',
+                    passwordVariable: 'DOCKERHUB_PASSWORD'
+                )]) {
+                    script {
+                        sh 'echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin'
+                        sh "docker push ${IMAGE_NAME}"
                     }
                 }
             }
@@ -33,11 +37,19 @@ pipeline {
 
         stage('Deploy with Ansible') {
             steps {
-                sh '''
-                  cd ansible
-                  ansible-playbook -i hosts playbook.yml
-                '''
+                echo '🚀 Triggering Ansible deployment (add your logic here)...'
+                // Add your Ansible command or SSH deployment here
             }
         }
     }
+
+    post {
+        success {
+            echo '✅ Pipeline executed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check logs for errors.'
+        }
+    }
 }
+
