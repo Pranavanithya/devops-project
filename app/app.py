@@ -1,9 +1,13 @@
+import logging
 from flask import Flask
-app=Flask(__name__)
+
+app = Flask(__name__)
+
+# Configure logging to a file
+logging.basicConfig(filename='flask_logs.log', level=logging.INFO)
 
 @app.route('/')
-def home():
-	return "hello"
-if __name__=="__main__":
-	app.run(debug=True, host='0.0.0.0')
+def hello():
+    app.logger.info("Hello route was accessed")
+    return "Hello from Flask"
 
